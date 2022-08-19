@@ -1,4 +1,5 @@
 ﻿using Core.Entities.Concrete;
+using Core.Extensions;
 using Core.Utilities.Security.Encyription;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -6,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 using System.Text;
 
@@ -35,7 +37,7 @@ namespace Core.Utilities.Security.Jwt
                 (
                 issuer: tokenOptions.Issuer,
                 audience: tokenOptions.Audience,
-                claims: operationClaim,
+                claims: SetClaims(user,operationClaim),
                 expires: _expiresAt,
                 notBefore: DateTime.Now,
                 signingCredentials: signingCredentials
@@ -45,7 +47,11 @@ namespace Core.Utilities.Security.Jwt
         private IEnumerable<Claim> SetClaims(User user, List<OperationClaim> operationClaims)
         {
             var claims = new List<Claim>();
-            claims.Add(new Claim("email", user.Email));
+            claims.AddNameIdentifier(user.Id.ToString());
+            claims.AddEmail(user.Email);
+            claims.AddName($"{user.FirstName}{user.LastName}");
+            claims.AddRoles(operationClaims.Select(c => c.Name).ToArray());
+            return claims;
 
         }
     }
